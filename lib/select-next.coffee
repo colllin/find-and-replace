@@ -1,5 +1,6 @@
 _ = require 'underscore-plus'
 {Range} = require 'atom'
+{CompositeDisposable} = require 'event-kit'
 
 # Find and select the next occurrence of the currently selected text.
 #
@@ -7,9 +8,17 @@ _ = require 'underscore-plus'
 module.exports =
 class SelectNext
   selectionRanges: null
+  selectionIntent: null
+  selectionObservers: null
 
   constructor: (@editor, {@findOptions}) ->
     @selectionRanges = []
+    @selectionObservers = new CompositeDisposable
+    @selectionObservers.add @editor.observeSelections (selection) =>
+      # console.log @editor, selection.getBufferRange()
+      console.log selection.getBufferRange().start, selection.getBufferRange().end
+      @selectionObservers.add selection.onDidChangeRange =>
+        console.log selection.getBufferRange().start, selection.getBufferRange().end
 
   findAndSelectNext: ->
     if @editor.getLastSelection().isEmpty()
@@ -52,6 +61,7 @@ class SelectNext
   selectWord: ->
     @editor.selectWordsContainingCursors()
     @wordSelected = @isWordSelected(@editor.getLastSelection())
+    console.log @wordSelected
 
   selectAllOccurrences: ->
     range = [[0, 0], @editor.getEofBufferPosition()]
@@ -129,3 +139,6 @@ class SelectNext
       nonWordCharacterToTheLeft and nonWordCharacterToTheRight and containsOnlyWordCharacters
     else
       false
+
+  destroy: ->
+    @selectionObservers.dispose()
