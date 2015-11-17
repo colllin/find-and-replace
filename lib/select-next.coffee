@@ -61,7 +61,6 @@ class SelectNext
   selectWord: ->
     @editor.selectWordsContainingCursors()
     @wordSelected = @isWordSelected(@editor.getLastSelection())
-    console.log @wordSelected
 
   selectAllOccurrences: ->
     range = [[0, 0], @editor.getEofBufferPosition()]
