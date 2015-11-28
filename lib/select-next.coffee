@@ -52,13 +52,13 @@ class SelectNext
   selectWord: ->
     @editor.selectWordsContainingCursors()
     lastSelection = @editor.getLastSelection()
-    @wordSelected = @isWordSelected(lastSelection)
-    disposables = new CompositeDisposable
-    clearWordSelected = () =>
-      @wordSelected = null
-      disposables.dispose()
-    disposables.add lastSelection.onDidChangeRange clearWordSelected
-    disposables.add lastSelection.onDidDestroy clearWordSelected
+    if @wordSelected = @isWordSelected(lastSelection)
+      disposables = new CompositeDisposable
+      clearWordSelected = () =>
+        @wordSelected = null
+        disposables.dispose()
+      disposables.add lastSelection.onDidChangeRange clearWordSelected
+      disposables.add lastSelection.onDidDestroy clearWordSelected
 
   selectAllOccurrences: ->
     range = [[0, 0], @editor.getEofBufferPosition()]
