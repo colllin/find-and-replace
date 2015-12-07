@@ -243,6 +243,25 @@ class FindView extends View
       findPattern = null
     findPattern ?= @findEditor.getText()
     @model.search(findPattern, options)
+    @handleSearchActive()
+
+  handleSearchActive: =>
+    atom.views.getView(atom.workspace).classList.add('find-search-active')
+    @findSelectionSubscriptions?.dispose()
+    setTimeout =>
+      @findSelectionSubscriptions = new CompositeDisposable
+      @model.getEditor().getSelections().forEach (selection) =>
+        @findSelectionSubscriptions.add selection.onDidChangeRange =>
+          console.log selection.getBufferRange().start, selection.getBufferRange().end
+          @findSelectionSubscriptions.dispose()
+          @onFindDisengaged()
+        @findSelectionSubscriptions.add selection.onDidDestroy =>
+          @findSelectionSubscriptions.dispose()
+          @onFindDisengaged()
+      @findSelectionSubscriptions.add @model.getEditor().onDidAddSelection =>
+        @findSelectionSubscriptions.dispose()
+        @onFindDisengaged()
+      # @model.getEditor().observeCursors
 
   findAll: (options={focusEditorAfter: true}) =>
     @findAndSelectResult(@selectAllMarkers, options)
@@ -417,6 +436,10 @@ class FindView extends View
   findPreviousSelected: =>
     @setSelectionAsFindPattern()
     @findPrevious(focusEditorAfter: true)
+
+  onFindDisengaged: =>
+    console.log('onFindDisengaged')
+    atom.views.getView(atom.workspace).classList.remove('find-search-active')
 
   updateOptionViews: =>
     @updateOptionButtons()
