@@ -243,30 +243,37 @@ class FindView extends View
       findPattern = null
     findPattern ?= @findEditor.getText()
     @model.search(findPattern, options)
-    @handleSearchActive()
+    @handleFindEngaged()
 
-  handleSearchActive: =>
+  handleFindEngaged: ->
+    console.log('handleFindEngaged')
     atom.views.getView(atom.workspace).classList.add('find-search-active')
     @findSelectionSubscriptions?.dispose()
-    setTimeout =>
+    clearTimeout(@findEngagedTimeout)
+    @findEngagedTimeout = setTimeout =>
+      console.log('timed out')
       @findSelectionSubscriptions = new CompositeDisposable
-      @model.getEditor().getSelections().forEach (selection) =>
-        @findSelectionSubscriptions.add selection.onDidChangeRange =>
-          console.log selection.getBufferRange().start, selection.getBufferRange().end
+      if editor = @model.getEditor()
+        editor.getSelections().forEach (selection) =>
+          @findSelectionSubscriptions.add selection.onDidChangeRange =>
+            console.log('onDidChangeRange')
+            @findSelectionSubscriptions.dispose()
+            @handleFindDisengaged()
+          @findSelectionSubscriptions.add selection.onDidDestroy =>
+            console.log('onDidDestroy')
+            @findSelectionSubscriptions.dispose()
+            @handleFindDisengaged()
+        @findSelectionSubscriptions.add editor.onDidAddSelection =>
+          console.log('onDidAddSelection')
           @findSelectionSubscriptions.dispose()
-          @onFindDisengaged()
-        @findSelectionSubscriptions.add selection.onDidDestroy =>
-          @findSelectionSubscriptions.dispose()
-          @onFindDisengaged()
-      @findSelectionSubscriptions.add @model.getEditor().onDidAddSelection =>
-        @findSelectionSubscriptions.dispose()
-        @onFindDisengaged()
-      # @model.getEditor().observeCursors
+          @handleFindDisengaged()
+        # @model.getEditor().observeCursors
 
   findAll: (options={focusEditorAfter: true}) =>
     @findAndSelectResult(@selectAllMarkers, options)
 
   findNext: (options={focusEditorAfter: false}) =>
+    console.log('findNext')
     @findAndSelectResult(@selectFirstMarkerAfterCursor, options)
 
   findPrevious: (options={focusEditorAfter: false}) =>
@@ -419,6 +426,7 @@ class FindView extends View
 
     if marker = @markers[markerIndex]
       editor = @model.getEditor()
+      console.log('selectMarkerAtIndex')
       editor.setSelectedBufferRange(marker.getBufferRange(), flash: true)
       editor.scrollToCursorPosition(center: true)
 
@@ -437,8 +445,8 @@ class FindView extends View
     @setSelectionAsFindPattern()
     @findPrevious(focusEditorAfter: true)
 
-  onFindDisengaged: =>
-    console.log('onFindDisengaged')
+  handleFindDisengaged: =>
+    console.log('handleFindDisengaged')
     atom.views.getView(atom.workspace).classList.remove('find-search-active')
 
   updateOptionViews: =>
