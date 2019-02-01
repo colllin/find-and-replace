@@ -212,6 +212,7 @@ class FindView extends View
       @findEditor.setText(selectedText)
     @findEditor.focus()
     @findEditor.getModel().selectAll()
+    @handleFindEngaged()
 
   focusReplaceEditor: =>
     selectedText = atom.workspace.getActiveTextEditor()?.getSelectedText?()
